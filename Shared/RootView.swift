@@ -12,6 +12,7 @@ struct RootView: View {
         #if os(macOS)
         ContentView()
             .frame(width:300,height: 300)
+//            .frame(minWidth: .infinity,  maxWidth: .infinity)
         #else
         ContentView()
         #endif

@@ -16,12 +16,15 @@ struct CommandExampleApp: App {
                 .environmentObject(store)
         }
         .commands{
+            #if os(macOS)
             MyCommand(store: store)
             OtherMenu()
+            #endif
         }
     }
 }
 
+#if os(macOS)
 struct MyCommand:Commands{
     @ObservedObject var store:Store
     @CommandsBuilder var body: some Commands{
@@ -48,10 +51,36 @@ struct MyCommand:Commands{
             
             Divider().padding(.horizontal, 10)
             
-            Button("other"){
+            Button("other window"){
                 print("other command")
+                let contentView =
+                    VStack{
+                        Text("New Window").padding(.all, 10)
+                    }.frame(minWidth: 200, minHeight: 200, alignment: .center)
+                
+
+                var window: NSWindow!
+                // Create the window and set the content view.
+                window = NSWindow(
+                    contentRect: NSRect(x: 0, y: 0, width: 480, height: 300),
+                    styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+                    backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                window.center()
+                window.setFrameAutosaveName("Main Window")
+                window.contentView = NSHostingView(rootView: contentView)
+                window.makeKeyAndOrderFront(nil)
             }
             
+            Button("open panel"){
+                let panel = NSOpenPanel()
+                      panel.nameFieldLabel = "open test:"
+                      panel.begin { response in
+                          if response == NSApplication.ModalResponse.OK, let fileUrl = panel.url {
+                              print(fileUrl)
+                          }
+                      }
+            }
             
             ForEach(0..<3){ i in
                 Button("button\(i)"){
@@ -60,7 +89,7 @@ struct MyCommand:Commands{
             }
             
             #if os(macOS)
-            MenuButton("Switch Selection"){
+            Menu("Switch Selection"){
                 Button("one"){
                     store.changeState(.one)
                 }
@@ -98,7 +127,7 @@ struct MyCommand:Commands{
         print("test2 command")
     }
 }
-
+#endif
 
 struct OtherMenu:Commands{
     var body: some Commands{
@@ -116,6 +145,7 @@ class Store:ObservableObject{
         case one,two,three
     }
     @Published var selection:Selection = .one
+    
     
     func changeState(_ selection:Selection){
         self.selection = selection
